@@ -15,6 +15,10 @@ Ouvrez ensuite [http://localhost:5173](http://localhost:5173) dans votre navigat
 
 Pour la commande `npm run serve`, le contenu construit est servi via Lite Server sur [http://localhost:3000](http://localhost:3000).
 
+## Aperçu
+
+L écran de combat affiche les deux monstres face à face au-dessus du menu d attaques, avec des animations colorées propres à chaque capacité.
+
 ## Jouabilité
 
 - Choisissez l un des trois monstres de départ dans le Village Émeraude.

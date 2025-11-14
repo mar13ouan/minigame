@@ -1,6 +1,11 @@
-import { BattleSystem, actionLabels } from './battle';
+import { BattleSystem } from './battle';
 import type { Scene, SceneContext } from './engine';
-import { createMonsterInstance, monsterDefinitions, type MonsterInstance } from './monsters';
+import {
+  createMonsterInstance,
+  monsterDefinitions,
+  type AttackAnimation,
+  type MonsterInstance
+} from './monsters';
 import { appendLog } from './state';
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
@@ -319,10 +324,12 @@ class FieldScene implements Scene {
   private returnScene?: StarterScene;
   private visited = false;
   private readonly map = fieldMap;
+  private overlayMarkup?: string;
 
   enter({ state }: SceneContext): void {
     state.scene = this.id;
     state.player.position = { ...this.spawn };
+    this.overlayMarkup = undefined;
     if (!this.visited) {
       appendLog(state, 'Les Plaines Virescentes s étendent à perte de vue.');
       this.visited = true;
@@ -394,40 +401,137 @@ class FieldScene implements Scene {
   private renderOverlay({ engine, state }: SceneContext) {
     const overlay = engine.getOverlay();
     const monster = state.player.monster;
+    const logHtml = state.log.map(line => `<div>${line}</div>`).join('');
+
     if (!monster) {
-      overlay.innerHTML = `
-        <div class="panel">Vous devez choisir un compagnon dans le village.</div>
-        <div class="panel log">${state.log.map(line => `<div>${line}</div>`).join('')}</div>
+      const markup = `
+        <div class="panel info-panel">Choisissez un compagnon dans le village pour commencer l aventure.</div>
+        <div class="panel log">${logHtml}</div>
       `;
+      this.updateOverlay(overlay, markup);
       return;
     }
 
     if (this.battle) {
       const enemy = this.battle.getEnemy();
       const player = this.battle.getPlayer();
-      overlay.innerHTML = `
-        <div class="panel">
-          <strong>Combat</strong><br />
-          ${player.monster.definition.name} HP ${player.hp}/${player.maxHp}<br />
-          ${enemy.monster.definition.name} HP ${enemy.hp}/${enemy.maxHp}<br />
-          <div>Choix : ${actionLabels.attack} | ${actionLabels.encourage} (Entrée)</div>
+      const attacks = this.battle.getPlayerAttacks();
+      const cursor = this.battle.getCursor();
+      const animations = this.battle.getAnimations();
+      const buildAttackStyle = (
+        side: 'player' | 'enemy',
+        baseColor: string,
+        animation: AttackAnimation | null
+      ) => {
+        const direction = side === 'player' ? 1 : -1;
+        const angle = animation?.angle ?? 0;
+        const offset = animation?.offset ?? 0;
+        const shouldMirror = animation?.mirror ?? true;
+        const effectiveAngle = side === 'enemy' && shouldMirror ? -angle : angle;
+        const effectiveOffset = side === 'enemy' && shouldMirror ? -offset : offset;
+        const parts = [
+          `--monster-color:${baseColor}`,
+          `--attack-color:${animation?.color ?? baseColor}`,
+          `--attack-secondary:${animation?.secondary ?? animation?.color ?? baseColor}`,
+          `--attack-angle:${effectiveAngle}deg`,
+          `--attack-offset:${effectiveOffset}px`,
+          `--attack-rise:${(animation?.rise ?? 0)}px`,
+          `--attack-spread:${animation?.spread ?? 1}`,
+          `--attack-width:${animation?.width ?? 180}px`,
+          `--attack-duration:${animation?.duration ?? 0.5}s`,
+          `--attack-intensity:${animation?.intensity ?? 1}`,
+          `--attack-direction:${direction}`
+        ];
+        return parts.join(';') + ';';
+      };
+      const playerStyle = buildAttackStyle('player', player.monster.definition.color, animations.playerAnimation);
+      const enemyStyle = buildAttackStyle('enemy', enemy.monster.definition.color, animations.enemyAnimation);
+      const battleMarkup = `
+        <div class="panel battle-panel">
+          <div class="battle-stage">
+            <div
+              class="monster-slot enemy"
+              data-attack-token="${animations.enemyAttack}"
+              data-hit-token="${animations.enemyHit}"
+              data-attack-effect="${animations.enemyAnimation ? animations.enemyAnimation.effect : ''}"
+              data-attack-id="${animations.enemyAnimationId}"
+              style="${enemyStyle}"
+            >
+              <div class="status-card">
+                <div class="status-header">
+                  <span class="name">${enemy.monster.definition.name}</span>
+                  <span class="level">Nv. ${enemy.monster.stats.level}</span>
+                </div>
+                <div class="hp-bar"><span style="width:${(enemy.hp / enemy.maxHp) * 100}%"></span></div>
+                <div class="hp-values">${enemy.hp}/${enemy.maxHp} PV</div>
+              </div>
+              <div class="sprite-wrapper">
+                <div class="attack-effect"></div>
+                <div class="platform"></div>
+                <div class="sprite-chassis">
+                  <div class="sprite"></div>
+                </div>
+              </div>
+            </div>
+            <div
+              class="monster-slot player"
+              data-attack-token="${animations.playerAttack}"
+              data-hit-token="${animations.playerHit}"
+              data-attack-effect="${animations.playerAnimation ? animations.playerAnimation.effect : ''}"
+              data-attack-id="${animations.playerAnimationId}"
+              style="${playerStyle}"
+            >
+              <div class="sprite-wrapper">
+                <div class="attack-effect"></div>
+                <div class="platform"></div>
+                <div class="sprite-chassis">
+                  <div class="sprite"></div>
+                </div>
+              </div>
+              <div class="status-card">
+                <div class="status-header">
+                  <span class="name">${player.monster.definition.name}</span>
+                  <span class="level">Nv. ${player.monster.stats.level}</span>
+                </div>
+                <div class="hp-bar"><span style="width:${(player.hp / player.maxHp) * 100}%"></span></div>
+                <div class="hp-values">${player.hp}/${player.maxHp} PV</div>
+              </div>
+            </div>
+          </div>
+          <div class="battle-menu">
+            ${attacks
+              .map((attack, index) => `
+                <div class="menu-item ${index === cursor ? 'active' : ''}">
+                  <div class="menu-header">
+                    <span class="menu-name">${attack.name}</span>
+                    <span class="menu-chance">${Math.round(attack.successRate * 100)}% réussite</span>
+                  </div>
+                  <div class="menu-details">${attack.damage} dégâts · ${attack.description}</div>
+                </div>
+              `)
+              .join('')}
+          </div>
         </div>
-        <div class="panel log">
-          ${state.log.map(line => `<div>${line}</div>`).join('')}
-        </div>
+        <div class="panel log">${logHtml}</div>
       `;
-    } else {
-      overlay.innerHTML = `
-        <div class="panel">
-          <strong>Plaines Virescentes</strong><br />
-          Affrontez des créatures sauvages pour renforcer ${monster.definition.name}.<br />
-          Revenez au village en longeant la falaise à gauche.
-        </div>
-        <div class="panel log">
-          ${state.log.map(line => `<div>${line}</div>`).join('')}
-        </div>
-      `;
+      this.updateOverlay(overlay, battleMarkup);
+      return;
     }
+
+    const markup = `
+      <div class="panel info-panel">
+        <strong>Plaines Virescentes</strong><br />
+        ${monster.definition.name} est prêt pour le combat. Cherchez une créature scintillante pour engager une bataille.
+      </div>
+      <div class="panel log">${logHtml}</div>
+    `;
+    this.updateOverlay(overlay, markup);
+  }
+
+  private updateOverlay(overlay: HTMLElement, markup: string) {
+    if (this.overlayMarkup === markup) return;
+    overlay.innerHTML = markup;
+    this.overlayMarkup = markup;
   }
 
   private applyMovement(state: SceneContext['state'], dt: number, speed: number, context: SceneContext) {
@@ -470,7 +574,7 @@ class FieldScene implements Scene {
       appendLog(context.state, 'La créature sauvage s enfuit !');
       this.battle = undefined;
     });
-    appendLog(context.state, 'Le combat commence ! Utilisez Entrée pour attaquer.');
+    appendLog(context.state, 'Le combat commence ! Utilisez ↑/↓ pour choisir une attaque puis Entrée.');
   }
 
   public setSpawn(position: { x: number; y: number }) {
@@ -581,7 +685,7 @@ class StarterScene implements Scene {
     const overlay = engine.getOverlay();
     const monster = state.player.monster;
     overlay.innerHTML = `
-      <div class="panel">
+      <div class="panel info-panel">
         <strong>Village Émeraude</strong><br />
         ${monster ? 'Traversez le pont à droite pour explorer le monde.' : 'Approchez-vous d une pierre et appuyez sur Entrée pour choisir.'}
       </div>
