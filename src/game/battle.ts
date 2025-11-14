@@ -1,4 +1,9 @@
-import { applyExperienceGain, createMonsterInstance, type MonsterInstance } from './monsters';
+import {
+  applyExperienceGain,
+  createMonsterInstance,
+  type AttackDefinition,
+  type MonsterInstance
+} from './monsters';
 import { appendLog, type GameState } from './state';
 
 export type BattleLog = string[];
@@ -6,13 +11,6 @@ export type BattleLog = string[];
 const randomBetween = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
 
 type BattlePhase = 'intro' | 'player-turn' | 'enemy-turn' | 'victory' | 'defeat';
-
-type BattleAction = 'attack' | 'encourage';
-
-export const actionLabels: Record<BattleAction, string> = {
-  attack: 'Attaquer',
-  encourage: 'Encourager'
-};
 
 export class BattleSystem {
   private player: MonsterInstance;
@@ -24,6 +22,12 @@ export class BattleSystem {
   private log: BattleLog = [];
   private timer = 0;
   private victoryHandler?: () => void;
+  private playerAttackToken = 0;
+  private enemyAttackToken = 0;
+  private playerHitToken = 0;
+  private enemyHitToken = 0;
+  private lastPlayerAttack?: AttackDefinition;
+  private lastEnemyAttack?: AttackDefinition;
 
   constructor(player: MonsterInstance, enemyId: string) {
     this.player = player;
@@ -62,6 +66,10 @@ export class BattleSystem {
     return this.cursor;
   }
 
+  public getPlayerAttacks(): AttackDefinition[] {
+    return this.player.definition.attacks;
+  }
+
   public getEnemy() {
     return { monster: this.enemy, hp: this.enemyHp, maxHp: this.computeMaxHp(this.enemy) };
   }
@@ -70,42 +78,47 @@ export class BattleSystem {
     return { monster: this.player, hp: this.playerHp, maxHp: this.computeMaxHp(this.player) };
   }
 
+  public getAnimations() {
+    return {
+      playerAttack: this.playerAttackToken,
+      enemyAttack: this.enemyAttackToken,
+      playerHit: this.playerHitToken,
+      enemyHit: this.enemyHitToken,
+      playerAnimation: this.lastPlayerAttack?.animation ?? null,
+      playerAnimationId: this.lastPlayerAttack?.id ?? '',
+      enemyAnimation: this.lastEnemyAttack?.animation ?? null,
+      enemyAnimationId: this.lastEnemyAttack?.id ?? ''
+    };
+  }
+
   public handleInput(state: GameState, event: KeyboardEvent) {
     if (this.phase !== 'player-turn') return;
+    const attacks = this.getPlayerAttacks();
+    if (attacks.length === 0) return;
     if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
-      this.cursor = (this.cursor + 1) % 2;
+      this.cursor = (this.cursor - 1 + attacks.length) % attacks.length;
     } else if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
-      this.cursor = (this.cursor + 1) % 2;
+      this.cursor = (this.cursor + 1) % attacks.length;
     } else if (event.key === 'Enter' || event.key === ' ') {
-      const action: BattleAction = this.cursor === 0 ? 'attack' : 'encourage';
-      this.executeAction(state, action);
+      const selectedAttack = attacks[this.cursor];
+      this.performPlayerAttack(state, selectedAttack);
     }
   }
 
-  private executeAction(state: GameState, action: BattleAction) {
-    switch (action) {
-      case 'attack':
-        this.performAttack(state);
-        break;
-      case 'encourage':
-        this.performEncourage(state);
-        break;
+  private performPlayerAttack(state: GameState, attack: AttackDefinition) {
+    this.lastPlayerAttack = attack;
+    this.playerAttackToken++;
+    const success = Math.random() <= attack.successRate;
+    if (success) {
+      const damage = attack.damage;
+      this.enemyHp = Math.max(0, this.enemyHp - damage);
+      appendLog(state, `${this.player.definition.name} utilise ${attack.name} et inflige ${damage} dégâts !`);
+      this.log.push(`${this.player.definition.name} lance ${attack.name}!`);
+      this.enemyHitToken++;
+    } else {
+      appendLog(state, `${this.player.definition.name} tente ${attack.name} mais échoue...`);
+      this.log.push(`${this.player.definition.name} rate son attaque.`);
     }
-  }
-
-  private performAttack(state: GameState) {
-    const damage = Math.max(1, this.player.stats.power + randomBetween(-2, 2) - Math.floor(this.enemy.stats.defense / 2));
-    this.enemyHp = Math.max(0, this.enemyHp - damage);
-    appendLog(state, `${this.player.definition.name} attaque pour ${damage} dégâts !`);
-    this.log.push(`${this.player.definition.name} attaque !`);
-    this.nextPhase(state);
-  }
-
-  private performEncourage(state: GameState) {
-    const moraleGain = randomBetween(1, 3);
-    this.player.stats.morale += moraleGain;
-    appendLog(state, `${this.player.definition.name} se motive (+${moraleGain} moral).`);
-    this.log.push(`${this.player.definition.name} retrouve confiance.`);
     this.nextPhase(state);
   }
 
@@ -124,10 +137,20 @@ export class BattleSystem {
 
   private enemyAttack(state: GameState) {
     if (this.phase !== 'enemy-turn') return;
-    const damage = Math.max(1, this.enemy.stats.power + randomBetween(-1, 2) - Math.floor(this.player.stats.defense / 2));
-    this.playerHp = Math.max(0, this.playerHp - damage);
-    appendLog(state, `${this.enemy.definition.name} attaque pour ${damage} dégâts !`);
-    this.log.push(`${this.enemy.definition.name} riposte.`);
+    const attack = this.enemy.definition.attacks[randomBetween(0, this.enemy.definition.attacks.length - 1)];
+    this.lastEnemyAttack = attack;
+    this.enemyAttackToken++;
+    const success = Math.random() <= attack.successRate;
+    if (success) {
+      const damage = attack.damage;
+      this.playerHp = Math.max(0, this.playerHp - damage);
+      appendLog(state, `${this.enemy.definition.name} utilise ${attack.name} et inflige ${damage} dégâts !`);
+      this.log.push(`${this.enemy.definition.name} frappe avec ${attack.name}.`);
+      this.playerHitToken++;
+    } else {
+      appendLog(state, `${this.enemy.definition.name} tente ${attack.name} mais échoue.`);
+      this.log.push(`${this.enemy.definition.name} manque sa cible.`);
+    }
     if (this.playerHp <= 0) {
       this.phase = 'defeat';
       appendLog(state, 'Vous avez été vaincu...');
