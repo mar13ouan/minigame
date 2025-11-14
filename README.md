@@ -7,9 +7,13 @@ Ce projet propose un prototype de mini jeu inspiré des mondes ouverts rétro av
 ```bash
 npm install
 npm run dev
+# ou pour une version statique build + live server
+npm run serve
 ```
 
 Ouvrez ensuite [http://localhost:5173](http://localhost:5173) dans votre navigateur.
+
+Pour la commande `npm run serve`, le contenu construit est servi via Lite Server sur [http://localhost:3000](http://localhost:3000).
 
 ## Jouabilité
 

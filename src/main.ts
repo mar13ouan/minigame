@@ -7,8 +7,8 @@ const bootstrap = () => {
   if (!app) throw new Error('Point de montage manquant');
 
   const canvas = document.createElement('canvas');
-  canvas.width = 320;
-  canvas.height = 180;
+  canvas.width = 640;
+  canvas.height = 384;
   canvas.style.width = '100%';
   canvas.style.height = '100%';
 
