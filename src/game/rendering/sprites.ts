@@ -36,8 +36,40 @@ export const drawMonsterSprite = (
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
-  color: string
+  color: string,
+  variant: 'default' | 'defeated' = 'default'
 ): void => {
+  if (variant === 'defeated') {
+    ctx.fillStyle = 'rgba(220, 38, 38, 0.8)';
+    ctx.beginPath();
+    ctx.ellipse(x, y + 16, 20, 8, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    const baseX = x - 18;
+    const baseY = y - 6;
+    ctx.fillStyle = color;
+    ctx.fillRect(baseX + 4, baseY - 6, 28, 12);
+    ctx.fillStyle = '#1f2937';
+    ctx.fillRect(baseX + 4, baseY + 4, 28, 4);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.fillRect(baseX + 6, baseY - 4, 12, 4);
+
+    const drawCross = (cx: number, cy: number): void => {
+      ctx.beginPath();
+      ctx.moveTo(cx - 3, cy - 3);
+      ctx.lineTo(cx + 3, cy + 3);
+      ctx.moveTo(cx + 3, cy - 3);
+      ctx.lineTo(cx - 3, cy + 3);
+      ctx.stroke();
+    };
+
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineWidth = 2;
+    drawCross(baseX + 14, baseY - 1);
+    drawCross(baseX + 26, baseY - 1);
+    return;
+  }
+
   drawShadow(ctx, x, y + 12, 12, 6);
   const baseX = x - 14;
   const baseY = y - 18;

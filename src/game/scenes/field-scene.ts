@@ -1,13 +1,8 @@
-import { BattleSystem } from '../battle/system';
+import { BattleSystem, type BattleMenuOption, type BattleOutcome } from '../battle/system';
 import type { Scene, SceneContext } from '../core/engine';
 import { drawCompanionEmote, drawMonsterSprite, drawPlayerSprite } from '../rendering/sprites';
 import { drawFlower, drawStone } from '../rendering/decor';
-import {
-  monsterDefinitions,
-  type MonsterInstance,
-  type AttackAnimation,
-  type AttackDefinition
-} from '../monsters';
+import { monsterDefinitions, type MonsterInstance, type AttackAnimation } from '../monsters';
 import { appendLog } from '../state';
 import { renderLog, wrapPanel, escapeHtml } from '../ui/templates';
 import { moveWithCollisions } from '../world/movement';
@@ -27,6 +22,8 @@ type WildCreature = {
   base: Point;
   position: Point;
   oscillation: number;
+  status: 'idle' | 'defeated';
+  cooldown: number;
 };
 
 type BattleStyleInput = {
@@ -67,6 +64,8 @@ export class FieldScene implements Scene {
   private readonly pressedKeys = new Set<string>();
   private spawn: Point = tileToPixel(2, 6);
   private battle?: BattleSystem;
+  private activeEncounter?: WildCreature;
+  private preBattlePosition?: Point;
   private returnScene?: Scene;
   private visited = false;
 
@@ -75,13 +74,17 @@ export class FieldScene implements Scene {
       id: 'sproutle',
       base: tileToPixel(13, 4),
       position: { ...tileToPixel(13, 4) },
-      oscillation: Math.random() * Math.PI * 2
+      oscillation: Math.random() * Math.PI * 2,
+      status: 'idle',
+      cooldown: 0
     },
     {
       id: 'flaruba',
       base: tileToPixel(15, 8),
       position: { ...tileToPixel(15, 8) },
-      oscillation: Math.random() * Math.PI * 2
+      oscillation: Math.random() * Math.PI * 2,
+      status: 'idle',
+      cooldown: 0
     }
   ];
 
@@ -147,6 +150,10 @@ export class FieldScene implements Scene {
 
   private animateWildCreatures(dt: number): void {
     this.wildCreatures.forEach(wild => {
+      wild.cooldown = Math.max(0, wild.cooldown - dt);
+      if (wild.status === 'defeated') {
+        return;
+      }
       wild.oscillation += dt;
       wild.position.x = wild.base.x + Math.sin(wild.oscillation) * 6;
       wild.position.y = wild.base.y + Math.cos(wild.oscillation * 0.5) * 4;
@@ -162,25 +169,62 @@ export class FieldScene implements Scene {
 
     const { x, y } = state.player.position;
     const encounter = this.wildCreatures.find(
-      wild => Math.hypot(wild.position.x - x, wild.position.y - y) < 36
+      wild =>
+        wild.status === 'idle' &&
+        wild.cooldown <= 0 &&
+        Math.hypot(wild.position.x - x, wild.position.y - y) < 36
     );
 
     if (encounter) {
-      this.startBattle(context, encounter.id);
+      this.startBattle(context, encounter);
     }
   }
 
-  private startBattle(context: SceneContext, enemyId: string): void {
+  private startBattle(context: SceneContext, encounter: WildCreature): void {
     const playerMonster = context.state.player.monster as MonsterInstance;
-    this.battle = new BattleSystem(playerMonster, enemyId);
-    this.battle.onVictory(() => {
-      appendLog(context.state, 'La créature sauvage s’enfuit !');
-      this.battle = undefined;
-    });
+    this.battle = new BattleSystem(playerMonster, encounter.id);
+    this.activeEncounter = encounter;
+    this.preBattlePosition = { ...context.state.player.position };
+    this.battle.onComplete(outcome => this.handleBattleOutcome(context, outcome));
     appendLog(
       context.state,
       'Le combat commence ! Utilisez ↑/↓ pour choisir une attaque puis Entrée.'
     );
+  }
+
+  private handleBattleOutcome(context: SceneContext, outcome: BattleOutcome): void {
+    const { state } = context;
+    const encounter = this.activeEncounter;
+    this.battle = undefined;
+    this.activeEncounter = undefined;
+
+    if (!encounter) {
+      this.preBattlePosition = undefined;
+      return;
+    }
+
+    if (outcome === 'victory') {
+      encounter.status = 'defeated';
+      appendLog(state, 'La créature sauvage s’effondre dans une mare écarlate.');
+    } else if (outcome === 'defeat') {
+      encounter.cooldown = 5;
+      appendLog(state, 'Vous êtes repoussé et retournez au campement pour reprendre des forces.');
+      state.player.position = { ...this.spawn };
+    } else {
+      encounter.cooldown = 3;
+      this.retreatFromEncounter(state);
+    }
+
+    this.preBattlePosition = undefined;
+  }
+
+  private retreatFromEncounter(state: SceneContext['state']): void {
+    if (!this.preBattlePosition) {
+      return;
+    }
+
+    const fallbackX = Math.max(TILE_SIZE, this.preBattlePosition.x - TILE_SIZE);
+    state.player.position = { x: fallbackX, y: this.preBattlePosition.y };
   }
 
   private drawDecor(ctx: CanvasRenderingContext2D): void {
@@ -199,7 +243,8 @@ export class FieldScene implements Scene {
   private drawWildCreatures(ctx: CanvasRenderingContext2D): void {
     this.wildCreatures.forEach(wild => {
       const definition = monsterDefinitions[wild.id];
-      drawMonsterSprite(ctx, wild.position.x, wild.position.y, definition.color);
+      const variant = wild.status === 'defeated' ? 'defeated' : 'default';
+      drawMonsterSprite(ctx, wild.position.x, wild.position.y, definition.color, variant);
     });
   }
 
@@ -251,7 +296,7 @@ export class FieldScene implements Scene {
 
     const enemy = this.battle.getEnemy();
     const player = this.battle.getPlayer();
-    const attacks = this.battle.getPlayerAttacks();
+    const options = this.battle.getMenuOptions();
     const cursor = this.battle.getCursor();
     const animations = this.battle.getAnimations();
 
@@ -266,17 +311,25 @@ export class FieldScene implements Scene {
       animation: animations.enemyAnimation
     });
 
-    const attackMenu = attacks
-      .map((attack: AttackDefinition, index) => {
+    const attackMenu = options
+      .map((option: BattleMenuOption, index) => {
         const classes = ['menu-item', index === cursor ? 'active' : ''].filter(Boolean).join(' ');
-        const chance = `${Math.round(attack.successRate * 100)}% réussite`;
+        const chance =
+          option.kind === 'attack'
+            ? `${Math.round(option.attack.successRate * 100)}% réussite`
+            : option.hint;
+        const details =
+          option.kind === 'attack'
+            ? `${option.attack.damage} dégâts · ${option.attack.description}`
+            : option.details;
+        const name = option.kind === 'attack' ? option.attack.name : option.label;
         return `
           <div class="${classes}">
             <div class="menu-header">
-              <span class="menu-name">${escapeHtml(attack.name)}</span>
+              <span class="menu-name">${escapeHtml(name)}</span>
               <span class="menu-chance">${escapeHtml(chance)}</span>
             </div>
-            <div class="menu-details">${escapeHtml(`${attack.damage} dégâts · ${attack.description}`)}</div>
+            <div class="menu-details">${escapeHtml(details)}</div>
           </div>
         `;
       })

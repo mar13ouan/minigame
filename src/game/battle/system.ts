@@ -6,7 +6,19 @@ import {
 } from '../monsters';
 import { appendLog, type GameState } from '../state';
 
-export type BattlePhase = 'intro' | 'player-turn' | 'enemy-turn' | 'victory' | 'defeat';
+export type BattlePhase =
+  | 'intro'
+  | 'player-turn'
+  | 'enemy-turn'
+  | 'victory'
+  | 'defeat'
+  | 'escape';
+
+export type BattleOutcome = 'victory' | 'defeat' | 'escape';
+
+export type BattleMenuOption =
+  | { kind: 'attack'; attack: AttackDefinition }
+  | { kind: 'run'; label: string; hint: string; details: string };
 
 const ENEMY_RESPONSE_DELAY_MS = 400;
 
@@ -39,13 +51,14 @@ export class BattleSystem {
   private phase: BattlePhase = 'intro';
   private cursor = 0;
   private timer = 0;
-  private victoryHandler?: () => void;
+  private completionHandler?: (outcome: BattleOutcome) => void;
   private playerAttackToken = 0;
   private enemyAttackToken = 0;
   private playerHitToken = 0;
   private enemyHitToken = 0;
   private lastPlayerAttack?: AttackDefinition;
   private lastEnemyAttack?: AttackDefinition;
+  private resolved = false;
 
   constructor(player: MonsterInstance, enemyId: string) {
     this.player = player;
@@ -55,8 +68,8 @@ export class BattleSystem {
     this.log.push(`Un ${this.enemy.definition.name} sauvage apparaît !`);
   }
 
-  public onVictory(handler: () => void): void {
-    this.victoryHandler = handler;
+  public onComplete(handler: (outcome: BattleOutcome) => void): void {
+    this.completionHandler = handler;
   }
 
   public update(state: GameState, dt: number): void {
@@ -73,18 +86,28 @@ export class BattleSystem {
       return;
     }
 
-    const attacks = this.getPlayerAttacks();
-    if (attacks.length === 0) {
+    const options = this.getMenuOptions();
+    if (options.length === 0) {
       return;
     }
 
+    this.cursor = Math.min(this.cursor, options.length - 1);
+
     if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
-      this.cursor = (this.cursor - 1 + attacks.length) % attacks.length;
+      this.cursor = (this.cursor - 1 + options.length) % options.length;
     } else if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
-      this.cursor = (this.cursor + 1) % attacks.length;
+      this.cursor = (this.cursor + 1) % options.length;
     } else if (event.key === 'Enter' || event.key === ' ') {
-      const selectedAttack = attacks[this.cursor];
-      this.performPlayerAttack(state, selectedAttack);
+      const selectedOption = options[this.cursor];
+      if (!selectedOption) {
+        return;
+      }
+
+      if (selectedOption.kind === 'attack') {
+        this.performPlayerAttack(state, selectedOption.attack);
+      } else {
+        this.attemptEscape(state);
+      }
     }
   }
 
@@ -98,6 +121,18 @@ export class BattleSystem {
 
   public getPlayerAttacks(): AttackDefinition[] {
     return this.player.definition.attacks;
+  }
+
+  public getMenuOptions(): BattleMenuOption[] {
+    return [
+      ...this.player.definition.attacks.map(attack => ({ kind: 'attack', attack } as BattleMenuOption)),
+      {
+        kind: 'run',
+        label: 'Fuite',
+        hint: 'Se retirer',
+        details: 'Quitter le combat et battre en retraite.'
+      }
+    ];
   }
 
   public getLog(): string[] {
@@ -152,13 +187,13 @@ export class BattleSystem {
     this.advanceFromPlayerTurn(state);
   }
 
+  private attemptEscape(state: GameState): void {
+    this.finishBattle(state, 'escape');
+  }
+
   private advanceFromPlayerTurn(state: GameState): void {
     if (this.enemyHp <= 0) {
-      this.phase = 'victory';
-      this.log.push('Victoire !');
-      appendLog(state, `Victoire ! ${this.player.definition.name} remporte le combat.`);
-      applyExperienceGain(this.player, 2).forEach(message => appendLog(state, message));
-      this.victoryHandler?.();
+      this.finishBattle(state, 'victory');
       return;
     }
 
@@ -191,12 +226,36 @@ export class BattleSystem {
     }
 
     if (this.playerHp <= 0) {
-      this.phase = 'defeat';
-      appendLog(state, 'Vous avez été vaincu...');
-      this.log.push('Défaite...');
+      this.finishBattle(state, 'defeat');
       return;
     }
 
     this.phase = 'player-turn';
+  }
+
+  private finishBattle(state: GameState, outcome: BattleOutcome): void {
+    if (this.resolved) {
+      return;
+    }
+
+    this.resolved = true;
+
+    if (outcome === 'victory') {
+      this.phase = 'victory';
+      this.log.push('Victoire !');
+      appendLog(state, `Victoire ! ${this.player.definition.name} remporte le combat.`);
+      applyExperienceGain(this.player, 2).forEach(message => appendLog(state, message));
+    } else if (outcome === 'defeat') {
+      this.phase = 'defeat';
+      this.playerHp = 0;
+      this.log.push('Défaite...');
+      appendLog(state, 'Vous avez été vaincu...');
+    } else {
+      this.phase = 'escape';
+      this.log.push('Fuite !');
+      appendLog(state, 'Vous prenez la fuite !');
+    }
+
+    this.completionHandler?.(outcome);
   }
 }
