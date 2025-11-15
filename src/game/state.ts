@@ -1,4 +1,5 @@
 import type { MonsterInstance } from './monsters';
+import { LOG_HISTORY_LIMIT } from './world/constants';
 
 export type PlayerState = {
   position: { x: number; y: number };
@@ -23,9 +24,9 @@ export const createInitialState = (): GameState => ({
   scene: 'starter'
 });
 
-export const appendLog = (state: GameState, message: string) => {
+export const appendLog = (state: GameState, message: string): void => {
   state.log.push(message);
-  if (state.log.length > 8) {
-    state.log.splice(0, state.log.length - 8);
+  if (state.log.length > LOG_HISTORY_LIMIT) {
+    state.log.splice(0, state.log.length - LOG_HISTORY_LIMIT);
   }
 };
