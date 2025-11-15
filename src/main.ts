@@ -1,8 +1,10 @@
-import { Engine } from './game/engine';
+import { Engine } from './game/core/engine';
 import { createScenes } from './game/scenes';
 import { createInitialState } from './game/state';
+import { OverlayController } from './game/ui/overlay-controller';
+import { preloadSprites } from './game/rendering/sprites';
 
-const bootstrap = () => {
+const bootstrap = async () => {
   const app = document.getElementById('app');
   if (!app) throw new Error('Point de montage manquant');
 
@@ -10,24 +12,28 @@ const bootstrap = () => {
   canvas.width = 640;
   canvas.height = 384;
   canvas.style.width = '100%';
-  canvas.style.height = '100%';
+  canvas.style.height = 'auto';
 
-  const overlay = document.createElement('div');
-  overlay.className = 'overlay';
+  const overlayElement = document.createElement('div');
+  overlayElement.className = 'overlay';
+  overlayElement.dataset.mode = 'default';
 
   app.appendChild(canvas);
-  app.appendChild(overlay);
+  app.appendChild(overlayElement);
 
   const state = createInitialState();
+  const overlay = new OverlayController(overlayElement);
   const engine = new Engine(canvas, overlay, state);
-  const { starter, field } = createScenes();
+
+  await preloadSprites();
+
+  const scenes = createScenes();
 
   engine.attachInput();
-  engine.setScene(starter);
+  engine.setScene(scenes.title);
   engine.start();
-
-  // Relier les scènes maintenant que l engine est prêt
-  field.setReturnScene(starter);
 };
 
-window.addEventListener('DOMContentLoaded', bootstrap);
+window.addEventListener('DOMContentLoaded', () => {
+  bootstrap().catch(error => console.error(error));
+});

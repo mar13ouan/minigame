@@ -136,6 +136,11 @@ export const monsterDefinitions: Record<string, MonsterDefinition> = {
         target: 'glimmeroot',
         requirement: stats => stats.speed >= 12,
         description: 'Une évolution vive pour les explorateurs rapides.'
+      },
+      {
+        target: 'thornward',
+        requirement: stats => stats.defense >= 12,
+        description: 'Les Sproutle robustes deviennent Thornward.'
       }
     ]
   },
@@ -203,6 +208,11 @@ export const monsterDefinitions: Record<string, MonsterDefinition> = {
         target: 'obsidrax',
         requirement: stats => stats.defense >= 12,
         description: 'La carapace se durcit pour former Obsidrax.'
+      },
+      {
+        target: 'solvulpine',
+        requirement: stats => stats.speed >= 12,
+        description: 'La vitesse flamboyante transforme Flaruba en Solvulpine.'
       }
     ]
   },
@@ -269,6 +279,11 @@ export const monsterDefinitions: Record<string, MonsterDefinition> = {
         target: 'abyssaur',
         requirement: stats => stats.power >= 11 && stats.defense >= 10,
         description: 'Quand la force augmente, Tidebble devient Abyssaur.'
+      },
+      {
+        target: 'aurorafin',
+        requirement: stats => stats.morale >= 12,
+        description: 'La confiance transforme Tidebble en Aurorafin.'
       }
     ]
   },
@@ -604,6 +619,444 @@ export const monsterDefinitions: Record<string, MonsterDefinition> = {
       }
     ],
     evolutions: []
+  },
+  thornward: {
+    id: 'thornward',
+    name: 'Thornward',
+    color: '#166534',
+    baseStats: makeStats(5, 12, 15, 9, 10),
+    description: 'Un gardien sylvestre cuirassé d épines.',
+    attacks: [
+      {
+        id: 'briar-ram',
+        name: 'Bélier Roncier',
+        damage: 9,
+        successRate: 0.88,
+        description: 'Charge avec une armure épineuse.',
+        animation: {
+          effect: 'dash',
+          color: '#14532d',
+          secondary: '#22c55e',
+          offset: 24,
+          duration: 0.5,
+          spread: 1.2
+        }
+      },
+      {
+        id: 'thorn-burst',
+        name: 'Explosion d Épines',
+        damage: 12,
+        successRate: 0.65,
+        description: 'Projette des épines dans toutes les directions.',
+        animation: {
+          effect: 'burst',
+          color: '#22c55e',
+          secondary: '#bbf7d0',
+          duration: 0.6,
+          spread: 1.35
+        }
+      },
+      {
+        id: 'verdant-wall',
+        name: 'Mur Verdoyant',
+        damage: 15,
+        successRate: 0.45,
+        description: 'Une barrière qui écrase les assaillants.',
+        animation: {
+          effect: 'quake',
+          color: '#166534',
+          secondary: '#22c55e',
+          duration: 0.7,
+          intensity: 1.3,
+          spread: 1.2
+        }
+      }
+    ],
+    evolutions: []
+  },
+  solvulpine: {
+    id: 'solvulpine',
+    name: 'Solvulpine',
+    color: '#fbbf24',
+    baseStats: makeStats(5, 13, 9, 15, 12),
+    description: 'Un renard solaire qui traverse la bataille en un éclair.',
+    attacks: [
+      {
+        id: 'solar-dash',
+        name: 'Ruée Solaire',
+        damage: 8,
+        successRate: 0.92,
+        description: 'Un sprint incandescent qui désoriente.',
+        animation: {
+          effect: 'dash',
+          color: '#fbbf24',
+          secondary: '#f97316',
+          offset: 30,
+          duration: 0.45,
+          spread: 1.25
+        }
+      },
+      {
+        id: 'flare-spiral',
+        name: 'Spirale d Éclats',
+        damage: 11,
+        successRate: 0.68,
+        description: 'Crée un vortex de lumière brûlante.',
+        animation: {
+          effect: 'ring',
+          color: '#fcd34d',
+          secondary: '#fb7185',
+          width: 200,
+          duration: 0.55,
+          spread: 1.35,
+          mirror: false
+        }
+      },
+      {
+        id: 'helios-lance',
+        name: 'Lance Hélios',
+        damage: 16,
+        successRate: 0.45,
+        description: 'Canalise un rayon perçant venu du ciel.',
+        animation: {
+          effect: 'beam',
+          color: '#f97316',
+          secondary: '#fde68a',
+          width: 230,
+          duration: 0.6,
+          angle: -6
+        }
+      }
+    ],
+    evolutions: []
+  },
+  aurorafin: {
+    id: 'aurorafin',
+    name: 'Aurorafin',
+    color: '#38bdf8',
+    baseStats: makeStats(5, 11, 11, 14, 14),
+    description: 'Un esprit aquatique rayonnant de confiance.',
+    attacks: [
+      {
+        id: 'aurora-surge',
+        name: 'Déferlante Boréale',
+        damage: 9,
+        successRate: 0.9,
+        description: 'Une vague colorée apaisante mais puissante.',
+        animation: {
+          effect: 'wave',
+          color: '#38bdf8',
+          secondary: '#bae6fd',
+          offset: 26,
+          duration: 0.55,
+          spread: 1.25
+        }
+      },
+      {
+        id: 'prism-burst',
+        name: 'Explosion Prismatique',
+        damage: 12,
+        successRate: 0.65,
+        description: 'Libère un cône scintillant.',
+        animation: {
+          effect: 'burst',
+          color: '#a5f3fc',
+          secondary: '#38bdf8',
+          duration: 0.6,
+          spread: 1.4
+        }
+      },
+      {
+        id: 'lumen-halo',
+        name: 'Halo Lumineux',
+        damage: 15,
+        successRate: 0.45,
+        description: 'Une couronne protectrice qui frappe les ennemis.',
+        animation: {
+          effect: 'ring',
+          color: '#f0f9ff',
+          secondary: '#38bdf8',
+          width: 210,
+          duration: 0.6,
+          spread: 1.3,
+          mirror: false
+        }
+      }
+    ],
+    evolutions: []
+  },
+  brasemire: {
+    id: 'brasemire',
+    name: 'Brasemire',
+    color: '#dc2626',
+    baseStats: makeStats(7, 18, 14, 12, 13),
+    description: 'Un gardien incandescent qui rôde dans les clairières brûlées.',
+    attacks: [
+      {
+        id: 'inferno-wave',
+        name: 'Vague Infernale',
+        damage: 14,
+        successRate: 0.8,
+        description: 'Un tsunami de braises ardentes.',
+        animation: {
+          effect: 'wave',
+          color: '#dc2626',
+          secondary: '#f97316',
+          offset: 32,
+          duration: 0.6,
+          spread: 1.25
+        }
+      },
+      {
+        id: 'ember-storm',
+        name: 'Tempête de Braises',
+        damage: 17,
+        successRate: 0.55,
+        description: 'Une pluie de cendres brûlantes.',
+        animation: {
+          effect: 'meteor',
+          color: '#ef4444',
+          secondary: '#f97316',
+          duration: 0.7,
+          spread: 1.35
+        }
+      },
+      {
+        id: 'smolder-crush',
+        name: 'Écrasement Fumant',
+        damage: 19,
+        successRate: 0.45,
+        description: 'S abat sur ses ennemis avec des roches en fusion.',
+        animation: {
+          effect: 'quake',
+          color: '#7f1d1d',
+          secondary: '#dc2626',
+          duration: 0.75,
+          intensity: 1.5,
+          spread: 1.2
+        }
+      }
+    ],
+    evolutions: []
+  },
+  embermaw: {
+    id: 'embermaw',
+    name: 'Embermaw',
+    color: '#ea580c',
+    baseStats: makeStats(8, 21, 16, 11, 12),
+    description: 'Le colossal dragon du brasier, encore plus féroce que Brasemire.',
+    attacks: [
+      {
+        id: 'lava-fangs',
+        name: 'Crocs de Lave',
+        damage: 16,
+        successRate: 0.75,
+        description: 'Des morsures incandescentes.',
+        animation: {
+          effect: 'slash',
+          color: '#ea580c',
+          secondary: '#f97316',
+          angle: -12,
+          offset: 34,
+          spread: 1.3,
+          duration: 0.55
+        }
+      },
+      {
+        id: 'eruption-pulse',
+        name: 'Pulse d Éruption',
+        damage: 20,
+        successRate: 0.5,
+        description: 'Une décharge explosive de magma.',
+        animation: {
+          effect: 'burst',
+          color: '#f97316',
+          secondary: '#fde68a',
+          duration: 0.65,
+          spread: 1.4
+        }
+      },
+      {
+        id: 'ashen-dominion',
+        name: 'Domination Cendrée',
+        damage: 24,
+        successRate: 0.4,
+        description: 'Réduit le champ de bataille en cendres.',
+        animation: {
+          effect: 'meteor',
+          color: '#7c2d12',
+          secondary: '#f97316',
+          duration: 0.75,
+          spread: 1.4
+        }
+      }
+    ],
+    evolutions: []
+  },
+  verdantTitan: {
+    id: 'verdantTitan',
+    name: 'Titan Verdoyant',
+    color: '#15803d',
+    baseStats: makeStats(7, 17, 17, 10, 12),
+    description: 'Un ancien protecteur de la canopée.',
+    attacks: [
+      {
+        id: 'rootquake',
+        name: 'Séisme Racinaire',
+        damage: 15,
+        successRate: 0.7,
+        description: 'Secoue la terre avec des racines géantes.',
+        animation: {
+          effect: 'quake',
+          color: '#166534',
+          secondary: '#86efac',
+          duration: 0.7,
+          intensity: 1.4,
+          spread: 1.25
+        }
+      },
+      {
+        id: 'verdant-ray',
+        name: 'Rayon Verdoyant',
+        damage: 18,
+        successRate: 0.55,
+        description: 'Un rayon chargé de chlorophylle.',
+        animation: {
+          effect: 'beam',
+          color: '#22c55e',
+          secondary: '#bbf7d0',
+          width: 220,
+          duration: 0.6,
+          angle: -8
+        }
+      },
+      {
+        id: 'bloom-barrage',
+        name: 'Barrage Florissant',
+        damage: 21,
+        successRate: 0.45,
+        description: 'Une pluie de fleurs tranchantes.',
+        animation: {
+          effect: 'meteor',
+          color: '#bbf7d0',
+          secondary: '#22c55e',
+          duration: 0.7,
+          spread: 1.35
+        }
+      }
+    ],
+    evolutions: []
+  },
+  azureAlpha: {
+    id: 'azureAlpha',
+    name: 'Alpha Azur',
+    color: '#2563eb',
+    baseStats: makeStats(7, 18, 13, 14, 11),
+    description: 'Le chef féroce de la gorge azurée.',
+    attacks: [
+      {
+        id: 'tidal-rend',
+        name: 'Déchirure de Marée',
+        damage: 14,
+        successRate: 0.8,
+        description: 'Des griffes baignées d écume.',
+        animation: {
+          effect: 'slash',
+          color: '#2563eb',
+          secondary: '#38bdf8',
+          angle: -14,
+          offset: 28,
+          duration: 0.5,
+          spread: 1.2
+        }
+      },
+      {
+        id: 'foam-burst',
+        name: 'Jet d Écume',
+        damage: 17,
+        successRate: 0.6,
+        description: 'Projette de l eau comprimée.',
+        animation: {
+          effect: 'burst',
+          color: '#60a5fa',
+          secondary: '#dbeafe',
+          duration: 0.6,
+          spread: 1.25
+        }
+      },
+      {
+        id: 'abyss-howl',
+        name: 'Hurlement Abyssal',
+        damage: 20,
+        successRate: 0.45,
+        description: 'Un cri qui fait trembler l air.',
+        animation: {
+          effect: 'wave',
+          color: '#1d4ed8',
+          secondary: '#60a5fa',
+          offset: 30,
+          duration: 0.6,
+          spread: 1.3
+        }
+      }
+    ],
+    evolutions: []
+  },
+  azureOmega: {
+    id: 'azureOmega',
+    name: 'Oméga Azur',
+    color: '#1e3a8a',
+    baseStats: makeStats(8, 20, 15, 13, 12),
+    description: 'Le second chef, une force tranquille mais implacable.',
+    attacks: [
+      {
+        id: 'pressure-maul',
+        name: 'Masse de Pression',
+        damage: 15,
+        successRate: 0.78,
+        description: 'Frappe avec la pression de l eau profonde.',
+        animation: {
+          effect: 'dash',
+          color: '#1e3a8a',
+          secondary: '#38bdf8',
+          offset: 24,
+          duration: 0.55,
+          spread: 1.2
+        }
+      },
+      {
+        id: 'abyss-spiral',
+        name: 'Spirale des Profondeurs',
+        damage: 18,
+        successRate: 0.55,
+        description: 'Aspire l adversaire dans un maelström.',
+        animation: {
+          effect: 'ring',
+          color: '#0ea5e9',
+          secondary: '#1e3a8a',
+          width: 220,
+          duration: 0.6,
+          spread: 1.35,
+          mirror: false
+        }
+      },
+      {
+        id: 'tidal-dominion',
+        name: 'Domination des Marées',
+        damage: 23,
+        successRate: 0.4,
+        description: 'Une vague écrasante et inévitable.',
+        animation: {
+          effect: 'wave',
+          color: '#0f172a',
+          secondary: '#38bdf8',
+          offset: 34,
+          duration: 0.65,
+          spread: 1.3
+        }
+      }
+    ],
+    evolutions: []
   }
 };
 
@@ -627,12 +1080,17 @@ export const applyExperienceGain = (monster: MonsterInstance, xp: number): strin
   monster.stats.morale += Math.ceil(xp * 0.9);
   log.push(`${monster.definition.name} gagne ${xp} points d expérience !`);
 
-  const availableEvo = monster.definition.evolutions.find(evo => evo.requirement(monster.stats));
-  if (availableEvo) {
-    const target = monsterDefinitions[availableEvo.target];
-    monster.definition = target;
-    monster.stats = { ...target.baseStats, level: monster.stats.level };
-    log.push(`Évolution ! ${target.name} rejoint votre équipe.`);
+  let evolved = true;
+  while (evolved) {
+    evolved = false;
+    const availableEvo = monster.definition.evolutions.find(evo => evo.requirement(monster.stats));
+    if (availableEvo) {
+      const target = monsterDefinitions[availableEvo.target];
+      monster.definition = target;
+      monster.stats = { ...target.baseStats, level: monster.stats.level };
+      log.push(`Évolution ! ${target.name} rejoint votre équipe.`);
+      evolved = true;
+    }
   }
 
   return log;
