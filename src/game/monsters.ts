@@ -136,6 +136,11 @@ export const monsterDefinitions: Record<string, MonsterDefinition> = {
         target: 'glimmeroot',
         requirement: stats => stats.speed >= 12,
         description: 'Une évolution vive pour les explorateurs rapides.'
+      },
+      {
+        target: 'verdant-warden',
+        requirement: stats => stats.defense >= 14 && stats.morale >= 14,
+        description: 'Le gardien verdoyant protège la forêt lorsque Sproutle atteint la sagesse.'
       }
     ]
   },
@@ -203,6 +208,11 @@ export const monsterDefinitions: Record<string, MonsterDefinition> = {
         target: 'obsidrax',
         requirement: stats => stats.defense >= 12,
         description: 'La carapace se durcit pour former Obsidrax.'
+      },
+      {
+        target: 'solaryn',
+        requirement: stats => stats.power >= 14 && stats.speed >= 11,
+        description: 'L entraînement acharné allume la flamme de Solaryn.'
       }
     ]
   },
@@ -269,8 +279,179 @@ export const monsterDefinitions: Record<string, MonsterDefinition> = {
         target: 'abyssaur',
         requirement: stats => stats.power >= 11 && stats.defense >= 10,
         description: 'Quand la force augmente, Tidebble devient Abyssaur.'
+      },
+      {
+        target: 'tide-archon',
+        requirement: stats => stats.level >= 12 && stats.morale >= 12,
+        description: 'Le souverain des marées se révèle aux compagnons équilibrés.'
       }
     ]
+  },
+  'verdant-warden': {
+    id: 'verdant-warden',
+    name: 'Gardien Verdoyant',
+    color: '#166534',
+    baseStats: makeStats(12, 17, 18, 14, 18),
+    description: 'Un protecteur majestueux des bois sacrés.',
+    attacks: [
+      {
+        id: 'warden-lance',
+        name: 'Lance des Sylves',
+        damage: 16,
+        successRate: 0.8,
+        description: 'Une pointe de racine infusée de magie.',
+        animation: {
+          effect: 'thorn',
+          color: '#15803d',
+          secondary: '#bbf7d0',
+          offset: 26,
+          duration: 0.55,
+          spread: 1.25
+        }
+      },
+      {
+        id: 'emerald-barrier',
+        name: 'Barrière Émeraude',
+        damage: 12,
+        successRate: 0.9,
+        description: 'Un rempart qui repousse les ennemis.',
+        animation: {
+          effect: 'ring',
+          color: '#4ade80',
+          secondary: '#22c55e',
+          width: 220,
+          duration: 0.6,
+          spread: 1.15,
+          mirror: false
+        }
+      },
+      {
+        id: 'ancient-judgement',
+        name: 'Jugement Ancien',
+        damage: 20,
+        successRate: 0.55,
+        description: 'Invoque la colère des esprits sylvestres.',
+        animation: {
+          effect: 'meteor',
+          color: '#facc15',
+          secondary: '#16a34a',
+          duration: 0.75,
+          spread: 1.35,
+          offset: 18
+        }
+      }
+    ],
+    evolutions: []
+  },
+  solaryn: {
+    id: 'solaryn',
+    name: 'Solaryn',
+    color: '#f97316',
+    baseStats: makeStats(12, 20, 14, 17, 18),
+    description: 'Un phénix solaire étincelant de bravoure.',
+    attacks: [
+      {
+        id: 'solar-dive',
+        name: 'Plongeon Solaire',
+        damage: 18,
+        successRate: 0.75,
+        description: 'Fond sur la cible enflammée.',
+        animation: {
+          effect: 'dash',
+          color: '#fbbf24',
+          secondary: '#f97316',
+          offset: 30,
+          duration: 0.5,
+          spread: 1.3
+        }
+      },
+      {
+        id: 'radiant-storm',
+        name: 'Tempête Radieuse',
+        damage: 22,
+        successRate: 0.55,
+        description: 'Une pluie de lumière brûlante.',
+        animation: {
+          effect: 'meteor',
+          color: '#fde047',
+          secondary: '#fb7185',
+          duration: 0.7,
+          spread: 1.2,
+          offset: 24
+        }
+      },
+      {
+        id: 'phoenix-cry',
+        name: 'Cri du Phénix',
+        damage: 14,
+        successRate: 0.9,
+        description: 'Une onde sonore qui galvanise.',
+        animation: {
+          effect: 'pulse',
+          color: '#fb7185',
+          secondary: '#f97316',
+          duration: 0.6,
+          spread: 1.3
+        }
+      }
+    ],
+    evolutions: []
+  },
+  'tide-archon': {
+    id: 'tide-archon',
+    name: 'Archonte des Marées',
+    color: '#1d4ed8',
+    baseStats: makeStats(12, 17, 17, 16, 18),
+    description: 'Le souverain des océans commande les houles.',
+    attacks: [
+      {
+        id: 'typhoon-blade',
+        name: 'Lame Typhon',
+        damage: 18,
+        successRate: 0.8,
+        description: 'Tranche avec un typhon concentré.',
+        animation: {
+          effect: 'slash',
+          color: '#38bdf8',
+          secondary: '#0ea5e9',
+          angle: -10,
+          offset: 40,
+          duration: 0.5,
+          spread: 1.2
+        }
+      },
+      {
+        id: 'abyssal-surge',
+        name: 'Flux Abyssal',
+        damage: 21,
+        successRate: 0.6,
+        description: 'Libère un torrent des profondeurs.',
+        animation: {
+          effect: 'wave',
+          color: '#2563eb',
+          secondary: '#22d3ee',
+          offset: 28,
+          duration: 0.65,
+          spread: 1.3
+        }
+      },
+      {
+        id: 'leviathan-roar',
+        name: 'Rugissement Léviathan',
+        damage: 24,
+        successRate: 0.45,
+        description: 'Fait trembler la mer et l air.',
+        animation: {
+          effect: 'quake',
+          color: '#0ea5e9',
+          secondary: '#38bdf8',
+          duration: 0.75,
+          intensity: 1.5,
+          spread: 1.2
+        }
+      }
+    ],
+    evolutions: []
   },
   bloomtail: {
     id: 'bloomtail',
@@ -600,6 +781,226 @@ export const monsterDefinitions: Record<string, MonsterDefinition> = {
           duration: 0.75,
           intensity: 1.6,
           spread: 1.2
+        }
+      }
+    ],
+    evolutions: []
+  },
+  obsidianox: {
+    id: 'obsidianox',
+    name: 'Obsidianox',
+    color: '#111827',
+    baseStats: makeStats(14, 22, 21, 14, 16),
+    description: 'Un colosse de roche noire, gardien des hautes terres.',
+    attacks: [
+      {
+        id: 'obsidian-charge',
+        name: 'Charge Obsidienne',
+        damage: 24,
+        successRate: 0.65,
+        description: 'Percute l ennemi de toute sa masse.',
+        animation: {
+          effect: 'dash',
+          color: '#111827',
+          secondary: '#f97316',
+          offset: 34,
+          duration: 0.55,
+          spread: 1.25
+        }
+      },
+      {
+        id: 'volcanic-spire',
+        name: 'Spire Volcanique',
+        damage: 28,
+        successRate: 0.45,
+        description: 'Projette des colonnes de lave solidifiée.',
+        animation: {
+          effect: 'meteor',
+          color: '#f97316',
+          secondary: '#fde047',
+          duration: 0.75,
+          spread: 1.2,
+          offset: 18
+        }
+      },
+      {
+        id: 'earth-rend',
+        name: 'Déchirure Tellurique',
+        damage: 20,
+        successRate: 0.85,
+        description: 'Secoue la terre avec ses sabots.',
+        animation: {
+          effect: 'quake',
+          color: '#1f2937',
+          secondary: '#f97316',
+          duration: 0.7,
+          intensity: 1.4,
+          spread: 1.15
+        }
+      }
+    ],
+    evolutions: []
+  },
+  'storm-wyvern': {
+    id: 'storm-wyvern',
+    name: 'Wyverne-tempête',
+    color: '#60a5fa',
+    baseStats: makeStats(15, 19, 17, 22, 20),
+    description: 'Une wyverne dominatrice des vents et des éclairs.',
+    attacks: [
+      {
+        id: 'tempest-talon',
+        name: 'Serre de Tempête',
+        damage: 20,
+        successRate: 0.8,
+        description: 'Frappe en créant des bourrasques.',
+        animation: {
+          effect: 'slash',
+          color: '#38bdf8',
+          secondary: '#e0f2fe',
+          angle: -14,
+          offset: 44,
+          duration: 0.45,
+          spread: 1.3
+        }
+      },
+      {
+        id: 'thunder-lash',
+        name: 'Fouet Tonnerre',
+        damage: 26,
+        successRate: 0.6,
+        description: 'Déchaîne un éclair vrillant.',
+        animation: {
+          effect: 'beam',
+          color: '#1d4ed8',
+          secondary: '#f8fafc',
+          width: 240,
+          duration: 0.6,
+          angle: -6
+        }
+      },
+      {
+        id: 'squall-maelstrom',
+        name: 'Maelström d Orage',
+        damage: 30,
+        successRate: 0.4,
+        description: 'Invoque une tempête qui foudroie tout.',
+        animation: {
+          effect: 'meteor',
+          color: '#60a5fa',
+          secondary: '#2563eb',
+          duration: 0.75,
+          spread: 1.35,
+          offset: 30
+        }
+      }
+    ],
+    evolutions: []
+  },
+  'coral-hydra': {
+    id: 'coral-hydra',
+    name: 'Hydre de Corail',
+    color: '#0ea5e9',
+    baseStats: makeStats(16, 21, 20, 18, 19),
+    description: 'Une créature maritime à trois têtes maîtrisant les courants.',
+    attacks: [
+      {
+        id: 'hydra-barrage',
+        name: 'Barrage Hydre',
+        damage: 23,
+        successRate: 0.7,
+        description: 'Projette des jets d eau concentrés.',
+        animation: {
+          effect: 'beam',
+          color: '#0ea5e9',
+          secondary: '#67e8f9',
+          width: 230,
+          duration: 0.6,
+          angle: -8
+        }
+      },
+      {
+        id: 'reef-snare',
+        name: 'Piège du Récif',
+        damage: 18,
+        successRate: 0.85,
+        description: 'Enserre la cible avec des récifs vivants.',
+        animation: {
+          effect: 'thorn',
+          color: '#0ea5e9',
+          secondary: '#a855f7',
+          offset: 24,
+          duration: 0.6,
+          spread: 1.2
+        }
+      },
+      {
+        id: 'tidal-collapse',
+        name: 'Effondrement des Marées',
+        damage: 32,
+        successRate: 0.35,
+        description: 'Frappe avec une masse d eau gigantesque.',
+        animation: {
+          effect: 'wave',
+          color: '#22d3ee',
+          secondary: '#99f6e4',
+          offset: 36,
+          duration: 0.8,
+          spread: 1.4
+        }
+      }
+    ],
+    evolutions: []
+  },
+  'tempest-king': {
+    id: 'tempest-king',
+    name: 'Roi Tempétueux',
+    color: '#312e81',
+    baseStats: makeStats(18, 24, 22, 19, 21),
+    description: 'Le monarque des tempêtes côtières brandit un trident mythique.',
+    attacks: [
+      {
+        id: 'trident-flash',
+        name: 'Éclair de Trident',
+        damage: 26,
+        successRate: 0.75,
+        description: 'Un coup éclair fulgurant.',
+        animation: {
+          effect: 'beam',
+          color: '#c084fc',
+          secondary: '#0ea5e9',
+          width: 240,
+          duration: 0.6,
+          angle: -4
+        }
+      },
+      {
+        id: 'royal-decree',
+        name: 'Décret Royal',
+        damage: 20,
+        successRate: 0.9,
+        description: 'Un ordre qui ébranle le moral ennemi.',
+        animation: {
+          effect: 'pulse',
+          color: '#312e81',
+          secondary: '#818cf8',
+          duration: 0.6,
+          spread: 1.25
+        }
+      },
+      {
+        id: 'storm-judgement',
+        name: 'Jugement des Tempêtes',
+        damage: 34,
+        successRate: 0.4,
+        description: 'Invoque un cataclysme de pluie et de tonnerre.',
+        animation: {
+          effect: 'meteor',
+          color: '#2563eb',
+          secondary: '#c7d2fe',
+          duration: 0.8,
+          spread: 1.45,
+          offset: 28
         }
       }
     ],

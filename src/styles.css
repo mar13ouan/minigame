@@ -9,45 +9,45 @@ body {
   margin: 0;
   display: flex;
   justify-content: center;
-  align-items: center;
-  height: 100vh;
+  align-items: flex-start;
+  min-height: 100vh;
+  padding: 32px 0;
 }
 
 #app {
   width: 960px;
-  height: 576px;
-  border: 6px solid #1e293b;
   background: #020617;
+  border: 6px solid #1e293b;
   box-shadow: 0 0 32px rgba(15, 23, 42, 0.8);
   position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  box-sizing: border-box;
 }
 
 canvas {
   width: 100%;
-  height: 100%;
+  height: auto;
+  display: block;
   image-rendering: pixelated;
 }
 
 .overlay {
-  position: absolute;
-  left: 0;
-  top: 0;
   width: 100%;
-  height: 100%;
-  pointer-events: none;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
   gap: 12px;
-  padding: 16px;
-  box-sizing: border-box;
+  pointer-events: auto;
 }
 
 .overlay .panel {
-  background: rgba(15, 23, 42, 0.85);
-  border: 2px solid #334155;
-  padding: 12px;
-  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.92);
+  border: 2px solid rgba(51, 65, 85, 0.9);
+  padding: 12px 16px;
+  border-radius: 10px;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.55);
 }
 
 .overlay .info-panel {
@@ -56,11 +56,66 @@ canvas {
 }
 
 .overlay .log {
-  flex: 1;
-  margin-top: 12px;
+  max-height: 140px;
   overflow-y: auto;
+  font-size: 11px;
+  line-height: 1.45;
+  border-left: 3px solid rgba(239, 68, 68, 0.65);
+}
+
+.overlay[data-mode='menu'] {
+  align-items: center;
+  justify-content: center;
+}
+
+.overlay[data-mode='menu'] .panel {
+  max-width: 420px;
+  width: 100%;
+  background: rgba(15, 23, 42, 0.95);
+}
+
+.overlay[data-mode='dialog'] {
+  justify-content: flex-end;
+}
+
+.overlay[data-mode='dialog'] .dialog-panel {
+  background: linear-gradient(160deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.85));
+  border-color: rgba(248, 250, 252, 0.1);
+}
+
+.overlay[data-mode='start'] {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: radial-gradient(circle at center, rgba(15, 23, 42, 0.92), rgba(2, 6, 23, 0.98));
+}
+
+.overlay[data-mode='start'] .panel {
+  max-width: 520px;
+  text-align: center;
+  background: rgba(15, 23, 42, 0.96);
+}
+
+.overlay[data-mode='battle'] {
+  position: absolute;
+  inset: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.overlay[data-mode='battle'] .panel {
+  background: rgba(15, 23, 42, 0.88);
+}
+
+.overlay[data-mode='battle'] .log {
+  max-height: none;
   font-size: 12px;
-  line-height: 1.4;
+  border-left: none;
 }
 
 
@@ -301,6 +356,89 @@ canvas {
   background: rgba(30, 64, 175, 0.45);
   transform: translateY(-2px) scale(1.01);
   box-shadow: 0 12px 24px rgba(30, 64, 175, 0.3);
+}
+
+.menu-shortcut {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(59, 130, 246, 0.25);
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-size: 11px;
+  margin-right: 8px;
+  color: #bfdbfe;
+}
+
+.menu-qty {
+  font-size: 11px;
+  color: #cbd5f5;
+  float: right;
+}
+
+.inventory-panel {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.quest-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.quest-line {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  border-left: 3px solid rgba(59, 130, 246, 0.3);
+  background: rgba(30, 41, 59, 0.55);
+}
+
+.quest-line.completed {
+  opacity: 0.65;
+  border-color: rgba(34, 197, 94, 0.45);
+}
+
+.quest-line.active {
+  border-color: rgba(56, 189, 248, 0.9);
+}
+
+.start-menu h1 {
+  margin: 0 0 12px;
+  font-size: 22px;
+  color: #f8fafc;
+  letter-spacing: 1px;
+}
+
+.start-menu p {
+  margin: 8px 0;
+  font-size: 13px;
+  color: #cbd5f5;
+}
+
+.start-menu .menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.start-menu .menu-item {
+  border-radius: 10px;
+  padding: 12px;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.start-menu .menu-item.active {
+  border-color: rgba(251, 191, 36, 0.85);
+  transform: translateY(-2px);
+  background: rgba(250, 204, 21, 0.2);
 }
 
 .menu-header {
