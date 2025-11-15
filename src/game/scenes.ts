@@ -408,7 +408,7 @@ class FieldScene implements Scene {
         <div class="panel info-panel">Choisissez un compagnon dans le village pour commencer l aventure.</div>
         <div class="panel log">${logHtml}</div>
       `;
-      this.updateOverlay(overlay, markup);
+      this.updateOverlay(overlay, markup, 'default');
       return;
     }
 
@@ -514,7 +514,7 @@ class FieldScene implements Scene {
         </div>
         <div class="panel log">${logHtml}</div>
       `;
-      this.updateOverlay(overlay, battleMarkup);
+      this.updateOverlay(overlay, battleMarkup, 'battle');
       return;
     }
 
@@ -525,10 +525,11 @@ class FieldScene implements Scene {
       </div>
       <div class="panel log">${logHtml}</div>
     `;
-    this.updateOverlay(overlay, markup);
+    this.updateOverlay(overlay, markup, 'default');
   }
 
-  private updateOverlay(overlay: HTMLElement, markup: string) {
+  private updateOverlay(overlay: HTMLElement, markup: string, mode: 'default' | 'battle') {
+    overlay.dataset.mode = mode;
     if (this.overlayMarkup === markup) return;
     overlay.innerHTML = markup;
     this.overlayMarkup = markup;
@@ -684,6 +685,7 @@ class StarterScene implements Scene {
   private renderOverlay({ engine, state }: SceneContext) {
     const overlay = engine.getOverlay();
     const monster = state.player.monster;
+    overlay.dataset.mode = 'default';
     overlay.innerHTML = `
       <div class="panel info-panel">
         <strong>Village Émeraude</strong><br />
