@@ -10,10 +10,11 @@ const bootstrap = () => {
   canvas.width = 640;
   canvas.height = 384;
   canvas.style.width = '100%';
-  canvas.style.height = '100%';
+  canvas.style.height = 'auto';
 
   const overlay = document.createElement('div');
   overlay.className = 'overlay';
+  overlay.dataset.mode = 'default';
 
   app.appendChild(canvas);
   app.appendChild(overlay);
