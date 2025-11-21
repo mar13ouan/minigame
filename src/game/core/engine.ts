@@ -15,6 +15,10 @@ export interface Scene {
   exit?(context: SceneContext): void;
   onKeyDown?(context: SceneContext, event: KeyboardEvent): void;
   onKeyUp?(context: SceneContext, event: KeyboardEvent): void;
+  onPointerDown?(context: SceneContext, position: { x: number; y: number }, event: MouseEvent):
+    | void
+    | boolean;
+  onWheel?(context: SceneContext, event: WheelEvent): void;
 }
 
 export class Engine {
@@ -50,6 +54,33 @@ export class Engine {
         this.scene.onKeyUp(this.createContext(), event);
       }
     });
+
+    this.canvas.addEventListener('mousedown', event => {
+      if (!this.scene?.onPointerDown) {
+        return;
+      }
+
+      const rect = this.canvas.getBoundingClientRect();
+      const x = ((event.clientX - rect.left) / rect.width) * this.canvas.width;
+      const y = ((event.clientY - rect.top) / rect.height) * this.canvas.height;
+      const shouldPrevent = this.scene.onPointerDown(this.createContext(), { x, y }, event);
+      if (shouldPrevent) {
+        event.preventDefault();
+      }
+    });
+
+    this.canvas.addEventListener(
+      'wheel',
+      event => {
+        if (!this.scene?.onWheel) {
+          return;
+        }
+
+        this.scene.onWheel(this.createContext(), event);
+        event.preventDefault();
+      },
+      { passive: false }
+    );
   }
 
   public setScene(scene: Scene): void {
