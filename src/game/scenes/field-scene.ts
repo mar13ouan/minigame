@@ -32,6 +32,23 @@ type BattleStyleInput = {
   animation: AttackAnimation | null;
 };
 
+type SpellDefinition = {
+  id: 'fireball' | 'lightning' | 'water-gun';
+  name: string;
+  color: string;
+  trail?: string;
+  speed: number;
+  radius: number;
+  onHit: string;
+};
+
+type SpellProjectile = {
+  position: Point;
+  velocity: { x: number; y: number };
+  definition: SpellDefinition;
+  lifetime: number;
+};
+
 const buildAttackStyle = ({ side, baseColor, animation }: BattleStyleInput): string => {
   const direction = side === 'player' ? 1 : -1;
   const shouldMirror = animation?.mirror ?? true;
@@ -62,6 +79,37 @@ export class FieldScene implements Scene {
 
   private readonly map = fieldMap;
   private readonly pressedKeys = new Set<string>();
+  private readonly spells: SpellDefinition[] = [
+    {
+      id: 'fireball',
+      name: 'Boule de feu',
+      color: '#f97316',
+      trail: '#fdba74',
+      speed: 280,
+      radius: 6,
+      onHit: 'Vous carbonisez la créature sauvage !'
+    },
+    {
+      id: 'lightning',
+      name: 'Éclair',
+      color: '#60a5fa',
+      trail: '#cbd5e1',
+      speed: 360,
+      radius: 5,
+      onHit: "La créature est foudroyée et s'effondre !"
+    },
+    {
+      id: 'water-gun',
+      name: 'Pistolet à eau',
+      color: '#22d3ee',
+      trail: '#67e8f9',
+      speed: 240,
+      radius: 7,
+      onHit: 'Le jet la renverse dans une mare mousseuse !'
+    }
+  ];
+  private currentSpellIndex = 0;
+  private projectiles: SpellProjectile[] = [];
   private spawn: Point = tileToPixel(2, 6);
   private battle?: BattleSystem;
   private activeEncounter?: WildCreature;
@@ -91,6 +139,7 @@ export class FieldScene implements Scene {
   public enter({ state }: SceneContext): void {
     state.scene = this.id;
     state.player.position = { ...this.spawn };
+    this.projectiles = [];
     if (!this.visited) {
       appendLog(state, 'Les Plaines Virescentes s’étendent à perte de vue.');
       this.visited = true;
@@ -104,6 +153,7 @@ export class FieldScene implements Scene {
     }
 
     this.applyMovement(context, dt, 120);
+    this.updateProjectiles(context, dt);
     this.animateWildCreatures(dt);
     this.checkEncounters(context);
   }
@@ -113,6 +163,7 @@ export class FieldScene implements Scene {
     drawTileMap(ctx, this.map);
     this.drawDecor(ctx);
     this.drawWildCreatures(ctx);
+    this.drawProjectiles(ctx);
     this.drawPlayer(context, ctx);
     this.renderOverlay(context);
   }
@@ -128,6 +179,25 @@ export class FieldScene implements Scene {
 
   public onKeyUp(_: SceneContext, event: KeyboardEvent): void {
     this.pressedKeys.delete(event.key);
+  }
+
+  public onPointerDown(context: SceneContext, position: Point, event: MouseEvent): boolean | void {
+    if (this.battle) {
+      return;
+    }
+
+    if (event.button === 0) {
+      this.castSpell(context, position);
+      return true;
+    }
+  }
+
+  public onWheel(context: SceneContext, event: WheelEvent): void {
+    const direction = event.deltaY > 0 ? 1 : -1;
+    const spellCount = this.spells.length;
+    this.currentSpellIndex = (this.currentSpellIndex + direction + spellCount) % spellCount;
+    const activeSpell = this.getActiveSpell();
+    appendLog(context.state, `${activeSpell.name} est prêt. Faites un clic gauche pour lancer le sort.`);
   }
 
   public setSpawn(position: Point): void {
@@ -183,6 +253,7 @@ export class FieldScene implements Scene {
   private startBattle(context: SceneContext, encounter: WildCreature): void {
     const playerMonster = context.state.player.monster as MonsterInstance;
     this.battle = new BattleSystem(playerMonster, encounter.id);
+    this.projectiles = [];
     this.activeEncounter = encounter;
     this.preBattlePosition = { ...context.state.player.position };
     this.battle.onComplete(outcome => this.handleBattleOutcome(context, outcome));
@@ -227,6 +298,86 @@ export class FieldScene implements Scene {
     state.player.position = { x: fallbackX, y: this.preBattlePosition.y };
   }
 
+  private getActiveSpell(): SpellDefinition {
+    return this.spells[this.currentSpellIndex];
+  }
+
+  private castSpell(context: SceneContext, target: Point): void {
+    const spell = this.getActiveSpell();
+    const origin = context.state.player.position;
+    const dx = target.x - origin.x;
+    const dy = target.y - origin.y;
+    const distance = Math.hypot(dx, dy);
+
+    if (distance < 4) {
+      return;
+    }
+
+    const velocity = {
+      x: (dx / distance) * spell.speed,
+      y: (dy / distance) * spell.speed
+    };
+
+    this.projectiles.push({
+      position: { ...origin },
+      velocity,
+      definition: spell,
+      lifetime: 1.8
+    });
+
+    appendLog(context.state, `Vous lancez ${spell.name} !`);
+  }
+
+  private updateProjectiles(context: SceneContext, dt: number): void {
+    const bounds = {
+      width: (this.map[0]?.length ?? 0) * TILE_SIZE,
+      height: this.map.length * TILE_SIZE
+    };
+
+    const updated: SpellProjectile[] = [];
+
+    this.projectiles.forEach(projectile => {
+      const nextPosition = {
+        x: projectile.position.x + projectile.velocity.x * dt,
+        y: projectile.position.y + projectile.velocity.y * dt
+      };
+
+      const remainingLifetime = projectile.lifetime - dt;
+
+      const hit = this.wildCreatures.find(
+        wild =>
+          wild.status === 'idle' &&
+          Math.hypot(wild.position.x - nextPosition.x, wild.position.y - nextPosition.y) <
+            projectile.definition.radius + 14
+      );
+
+      if (hit) {
+        hit.status = 'defeated';
+        hit.cooldown = 4;
+        appendLog(context.state, projectile.definition.onHit);
+        return;
+      }
+
+      if (
+        remainingLifetime <= 0 ||
+        nextPosition.x < 0 ||
+        nextPosition.y < 0 ||
+        nextPosition.x > bounds.width ||
+        nextPosition.y > bounds.height
+      ) {
+        return;
+      }
+
+      updated.push({
+        ...projectile,
+        position: nextPosition,
+        lifetime: remainingLifetime
+      });
+    });
+
+    this.projectiles = updated;
+  }
+
   private drawDecor(ctx: CanvasRenderingContext2D): void {
     const flowers: Array<{ position: Point; color: string }> = [
       { position: tileToPixel(6, 3), color: '#f472b6' },
@@ -245,6 +396,33 @@ export class FieldScene implements Scene {
       const definition = monsterDefinitions[wild.id];
       const variant = wild.status === 'defeated' ? 'defeated' : 'default';
       drawMonsterSprite(ctx, wild.position.x, wild.position.y, definition.color, variant);
+    });
+  }
+
+  private drawProjectiles(ctx: CanvasRenderingContext2D): void {
+    this.projectiles.forEach(projectile => {
+      if (projectile.definition.trail) {
+        ctx.fillStyle = projectile.definition.trail;
+        ctx.globalAlpha = 0.6;
+        ctx.beginPath();
+        ctx.arc(
+          projectile.position.x - projectile.velocity.x * 0.025,
+          projectile.position.y - projectile.velocity.y * 0.025,
+          projectile.definition.radius + 3,
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+
+      ctx.fillStyle = projectile.definition.color;
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(projectile.position.x, projectile.position.y, projectile.definition.radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
     });
   }
 
@@ -279,9 +457,11 @@ export class FieldScene implements Scene {
       return;
     }
 
+    const activeSpell = this.getActiveSpell();
     const info = `
       <strong>Plaines Virescentes</strong><br />
-      ${escapeHtml(playerMonster.definition.name)} est prêt pour le combat. Cherchez une créature scintillante pour engager une bataille.
+      ${escapeHtml(playerMonster.definition.name)} est prêt pour le combat. Cherchez une créature scintillante pour engager une bataille.<br />
+      <em>Sort actif :</em> ${escapeHtml(activeSpell.name)} · molette pour changer · clic gauche pour lancer.
     `;
     overlay.render(
       OverlayMode.Default,
